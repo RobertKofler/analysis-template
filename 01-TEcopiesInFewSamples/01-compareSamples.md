@@ -30,10 +30,9 @@ conda  activate tutorial
 
 ## The Data
 
-## the analysis directory
-
-The tutorial will receive a new folder 2026-tutorial; the first analysis
-receives a subfolder 01-compFewStrains
+The tutorial will be done in a neww folder 2026-tutorial. The first
+analysis receives a subfolder 01-compFewStrains (compare a few strains).
+But I think that 2026-07-13-compFewStrains may be a better name
 
 ``` bash
 # move into the newly generated folder (mkdir)
@@ -42,9 +41,9 @@ cd /home/robert-kofler/analysis/2026-tutorial/01-compFewStrains
 
 ### the short read data
 
-We will use the following short read data sets. NOte the collection date
-(year) differs from 1850 to 2004; from
-<https://pubmed.ncbi.nlm.nih.gov/40479505/>
+We will use the following short read data sets. Note the collection date
+(year) varies from 1850 to 2004; extracted from ‘sup_file_1_short-reads’
+from <https://pubmed.ncbi.nlm.nih.gov/40479505/>
 
     SRR23876569 H25     PRJNA945389 Shpak2023   1850    Passau, Germany 49  13
     SRR23876565 H5      PRJNA945389 Shpak2023   1875    Zealand, Denmark    55  12
