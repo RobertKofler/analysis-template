@@ -20,10 +20,109 @@ The scientific question of this mini-tutorial is whether we can reproduce the fi
 Make a separate Conda environment for each publication, or even each separate analysis
 ```{bash eval=FALSE}
 # create environment; pin software version -> reproducibility
-conda create -n tutorial bwa=0.7.19 samtools=1.3.1  
+conda create -n tutorial bwa=0.7.19 samtools=1.3.1
 
 # enter the new environment
 conda  activate tutorial
+```
+
+## The Data
+
+## the analysis directory
+
+The tutorial will receive a new folder 2026-tutorial; the first analysis receives a subfolder 01-compFewStrains
+```{bash eval=FALSE}
+# move into the newly generated folder (mkdir)
+cd /home/robert-kofler/analysis/2026-tutorial/01-compFewStrains
+```
+
+
+### the short read data
+We will use the following short read data sets. NOte the collection date (year) differs from 1850 to 2004; from https://pubmed.ncbi.nlm.nih.gov/40479505/
+
+```
+SRR23876569	H25		PRJNA945389	Shpak2023	1850	Passau, Germany	49	13
+SRR23876565	H5		PRJNA945389	Shpak2023	1875	Zealand, Denmark	55	12
+SRR11846555	Crimea		PRJNA634847	Schwarz2020	1936	Crimea, Ukraine	54	34
+SRR11846565	Hikone-R		PRJNA634847	Schwarz2020	1958	Japan	35	138
+SRR1663560	I38	 	PRJNA268111	Grenier2015	2004	Ithaca, USA	42	-76
+SRR189041	CO1_1-HE		PRJNA30085	Pool2012	2004	Cameroon	6	10
+```
+
+Download prepare
+```{bash eval=FALSE}
+# in /home/robert-kofler/analysis/2026-tutorial/01-compFewStrains 
+mkdir rawdata
+# folder for the short reads
+cd rawdata
+```
+
+Download with separate sra environment
+```{bash eval=FALSE}
+# for me it was necessary to generate a dedicated sra environment
+# otherwise i ended up with an updated version
+conda create -n sra -c conda-forge -c bioconda "sra-tools>=3.1"
+conda activate sra
+
+# now prefetch
+prefetch SRR23876569 SRR23876565 SRR11846555 SRR11846565 SRR1663560 SRR189041
+# and dump
+fasterq-dump SRR23876569 SRR23876565 SRR11846555 SRR11846565 SRR1663560 SRR189041
+```
+
+Rename the files to get a bit more intuitive names using ln (**thats important i generate hard links, so the original file name will NOT be changed** avoiding potential confusion)
+```{bash eval=FALSE}
+ln SRR23876569_1.fastq H25-1850_1.fastq
+ln SRR23876569_2.fastq H25-1850_2.fastq
+
+ln SRR23876565_1.fastq H5-1875_1.fastq
+ln SRR23876565_2.fastq H5-1875_2.fastq
+
+ln SRR11846555_1.fastq Crimea-1936_1.fastq
+
+ln SRR11846565_1.fastq Hikone-1958_1.fastq
+
+ln SRR1663560_1.fastq I38-2004_1.fastq
+
+ln SRR189041_1.fastq CO1-2004_1.fastq
+# TODO
+```
+
+
+## the reference
+```{bash eval=FALSE}
+mkdir refg
+
+
+```
+
+### the T2T reference genome
+Lets use the t2t assembly of Dmel published by https://www.nature.com/articles/s41467-025-67031-w
+
+```{bash eval=FALSE}
+mkdir refg-wg # reference genome - whole genome
+# available here https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_048772135.1/
+# prepare T2T; reformat fasta entry names; dont worry about details of this code although I'm quite proud i came up with this without claude ;)
+cat GCA_048772135.1_ASM4877213v1_genomic.fna |perl -pe 's/>.*?Canton S (chromosome )?([^,]+).*/>$2/' > ../../../../refg-wg/Dmel-canton-t2t.raw.fasta
+ 
+# convert repeatmasked lowercase shit into upper case (perhaps i'm paranoid but i do not trust the lowercase)
+reader-fasta.py Dmel-canton-t2t.raw.fasta | fasta-formatter-fasta.py --upper |fasta-writter.py > Dmel-canton-t2t.clean.fasta
+# this is using my own bionicle library https://github.com/RobertKofler/bionicle
+```
+
+head of the file Dmel-canton-t2t.clean.fasta; note simple fasta name (just X) and the simple fasta characters (ATCG)
+```
+>X
+GTTACGTATTGCTCCAAATTACCTCCCAGCCAAAGCACCTGAAATACAAAAACAAAGAATTAATGCAATAAATAAATCAA
+ATAAATACAAATACAATACTCACCCCAAATAACCTCCCAGCTAATTTACCTGAAAAAACAAAAATTAATACAATATTAAA
+AACGAATAACAAATGTAATACTTACCAAATTTTAACTTTGTATTCATTTCCATGGCCCAAATCGTTGCGACGGTCCTCGG
+CAACAAATCATGTTCCGGCGGCTCCTAGCTGCCAATCCCGACGCATTGGCCACAAGACGCGGCGCTCCTGGCAACTCTCG
+ATGAATAACCGAGCTCCAATTTCCACGACGACTCTTCTGCCAAACGAGTCAGATTACACCAACATAATGCCAGCAGCTCC
+CAAACAATGCAATGACGGCTGCGCGGGATCCATCTTCAGATTTTCTTCTTCCCGACGACCGGCTAAGCTGCCCTGCAATT
+TAAGAAATTTTATTAAACAATTGCAAATATCTACCACTGAGGGTGGTAGATACAACCACCAAATGACAGCGGCGCGGGAT
+ACACCCACCACGAATAGGCTTTCTGCAGCGCTGGCCGGACATGCATGTTGCAAGCGACGCGCATTCAGCGTCCACAACAA
+GCCCCAGCCAGAATACAACAAACACTCACCTGCAATGTTTCCTGAGGCTTCCAGCGACTCGGTGCTTCCGTCCTTCTGGC
+
 ```
 
 
