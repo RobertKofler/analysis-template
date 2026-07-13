@@ -1,0 +1,29 @@
+01-compareTEcontentOfSeveralSamples
+================
+2026-07-13
+
+# Intro
+
+This is a guide showing students on how to best perform bioinformatics
+analysis. Document analysis carefully in RMarkdown. Translate into a
+github_document and upload everything into github. Furthermore use conda
+to manage software installation and make it reproducible. Upload small
+files that may be helful for analyis. In any case always upload the
+processed data that allow to regenerate each figure
+
+**Scientific question** The scientific question of this mini-tutorial is
+whether we can reproduce the finding that several TEs increased in copy
+numbers in recent years.
+
+## Conda
+
+Make a separate Conda environment for each publication, or even each
+separate analysis
+
+``` bash
+# create environment; pin software version -> reproducibility
+conda create -n tutorial bwa=0.7.19 samtools=1.3.1  
+
+# enter the new environment
+conda  activate tutorial
+```
