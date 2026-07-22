@@ -32,7 +32,7 @@ analysis
 
 ``` bash
 # create environment; if feasible aim to pin software versions
-conda create -n tutorial bwa=0.7.19 samtools=1.3.1
+conda create -n tutorial -c conda-forge -c bioconda bwa samtools
 
 # enter the new environment
 conda  activate tutorial
@@ -283,4 +283,51 @@ seqkit fx2tab -nlg dmel-tes.fasta
 seqkit fx2tab -nlg dmel-tes.fasta |wc
 #    132     396    2366
 # we have 132 TE consensus seuqences
+```
+
+## merge
+
+lets merge the TE sequence and the scg and lets prepare them for mapping
+
+``` bash
+cat dmel-tes.fasta scg_rhi_tj_rpl32.fa > ../dmel-tes-scg.fasta
+# lets double check the number of sequences
+seqkit fx2tab -nlg ../dmel-tes-scg.fasta|wc
+    135     405    2428
+# perfect 132(TEs) + 3(scg) = 135
+
+# now prepare for mapping
+bwa index dmel-tes-scg.fasta
+```
+
+# Main analysis
+
+## mapping
+
+Lets map the short read data to the TE-reference. One question is should
+we use single-end or paired-end mappigns. Actually good question, and I
+have no idea. Paired end is more data, but could this lead to problems
+as our refernce sequence are rather short. So lets just try both
+
+single end mappging
+
+``` bash
+mkdir map-se
+# mapping will be done with the following shell script
+# begin map.sh
+ref="/home/robert-kofler/analysis/2026-tutorial/01-compFewStrains/refg/dmel-tes-scg.fasta"
+in="/home/robert-kofler/analysis/2026-tutorial/01-compFewStrains/rawdata"
+out="/home/robert-kofler/analysis/2026-tutorial/01-compFewStrains/map-se"
+
+bwa mem -t 8 $ref $in/1850-H25_1.fastq | samtools sort -@ 4 -o $out/1850-H25.sort.bam -
+bwa mem -t 8 $ref $in/1875-H5_1.fastq | samtools sort -@ 4 -o $out/1875-H5.sort.bam -
+bwa mem -t 8 $ref $in/1936-Crimea_1.fastq | samtools sort -@ 4 -o $out/1936-Crimea.sort.bam -
+bwa mem -t 8 $ref $in/1958-Hikone_1.fastq | samtools sort -@ 4 -o $out/1958-Hikone.sort.bam -
+bwa mem -t 8 $ref $in/2004-CO1_1.fastq | samtools sort -@ 4 -o $out/2004-CO1.sort.bam -
+bwa mem -t 8 $ref $in/2004-I38.fastq | samtools sort -@ 4 -o $out/2004-I38.sort.bam -
+# End shell script
+
+
+# start mapping
+zsh map.sh
 ```
