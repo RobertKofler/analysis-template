@@ -27,33 +27,49 @@ numbers in recent years
 
 ## Conda
 
-Make a separate Conda environment for each publication, or even each
-separate analysis
+Make a separate Conda environment for each publication, or even for each
+analysis
 
 ``` bash
-# create environment; pin software version -> reproducibility
+# create environment; if feasible aim to pin software versions
 conda create -n tutorial bwa=0.7.19 samtools=1.3.1
 
 # enter the new environment
 conda  activate tutorial
 ```
 
-## The Data
+# The Data
 
-The tutorial will be done in a neww folder 2026-tutorial. The first
-analysis receives a subfolder 01-compFewStrains (compare a few strains).
-But I think that 2026-07-13-compFewStrains may be a better name
+The tutorial will be done in a new folder that I called ‘2026-tutorial’.
+This analysis will be done in the subfolder 01-compFewStrains (compare a
+few strains). However I would recommend the following name
+‘2026-07-13-compFewStrains’
+
+Here I introduce another bioinformatics commandment: **thou should have
+all data necessary for performing an analysis in the deticated
+analysis-folder**
 
 ``` bash
-# move into the newly generated folder (mkdir)
+# move into the newly generated folder
 cd /home/robert-kofler/analysis/2026-tutorial/01-compFewStrains
 ```
 
-### the short read data
+The tutorial needs three data sets:
 
-We will use the following short read data sets. Note the collection date
-(year) varies from 1850 to 2004; extracted from ‘sup_file_1_short-reads’
-from <https://pubmed.ncbi.nlm.nih.gov/40479505/>
+- short reads of **D. melanogaster** strains sampled at different years
+  during the last century.
+- a long read assembly; it will be used to validate that the single copy
+  genes are really single copy, i.e. occur just once in the reference
+  genome
+- a TE library plus single copy genes; this is the basis for any
+  analysis of TE copy number e.g. with DeviaTE, reveal/seqvista
+
+## the short read data
+
+First we will obtain the short read data. We will use the following
+short read data sets. Note the collection date (year) varies from 1850
+to 2004; extracted from ‘sup_file_1_short-reads’ from
+<https://pubmed.ncbi.nlm.nih.gov/40479505/>
 
     SRR23876569 H25     PRJNA945389 Shpak2023   1850    Passau, Germany 49  13
     SRR23876565 H5      PRJNA945389 Shpak2023   1875    Zealand, Denmark    55  12
@@ -71,11 +87,11 @@ mkdir rawdata
 cd rawdata
 ```
 
-Download with separate sra environment
+Download using separate sra environment
 
 ``` bash
 # for me it was necessary to generate a dedicated sra environment
-# otherwise i ended up with an updated version
+# otherwise i ended up with an outdated sra-tools version
 conda create -n sra -c conda-forge -c bioconda "sra-tools>=3.1"
 conda activate sra
 
@@ -85,59 +101,186 @@ prefetch SRR23876569 SRR23876565 SRR11846555 SRR11846565 SRR1663560 SRR189041
 fasterq-dump SRR23876569 SRR23876565 SRR11846555 SRR11846565 SRR1663560 SRR189041
 ```
 
-Rename the files to get a bit more intuitive names using ln (**thats
-important i generate hard links, so the original file name will NOT be
-changed** avoiding potential confusion)
+Rename the files to get a bit more intuitive names using ln. ln
+generates hard-links - **it is important to generate hard links** as the
+original file name will not be changed nor will the data be duplicated.
 
 ``` bash
-ln SRR23876569_1.fastq H25-1850_1.fastq
-ln SRR23876569_2.fastq H25-1850_2.fastq
+ln SRR23876569_1.fastq 1850-H25_1.fastq
+ln SRR23876569_2.fastq 1850-H25_2.fastq
 
-ln SRR23876565_1.fastq H5-1875_1.fastq
-ln SRR23876565_2.fastq H5-1875_2.fastq
+ln SRR23876565_1.fastq 1875-H5_1.fastq
+ln SRR23876565_2.fastq 1875-H5_2.fastq
 
-ln SRR11846555_1.fastq Crimea-1936_1.fastq
+ln SRR11846555_1.fastq 1936-Crimea_1.fastq
+ln SRR11846555_2.fastq 1936-Crimea_2.fastq
 
-ln SRR11846565_1.fastq Hikone-1958_1.fastq
+ln SRR11846565_1.fastq 1958-Hikone_1.fastq
+ln SRR11846565_2.fastq 1958-Hikone_2.fastq
 
-ln SRR1663560_1.fastq I38-2004_1.fastq
+ln SRR1663560_1.fastq 2004-I38_1.fastq
+ln SRR1663560_2.fastq 2004-I38_2.fastq
 
-ln SRR189041_1.fastq CO1-2004_1.fastq
-# TODO
-```
+ln SRR189041_1.fastq 2004-CO1_1.fastq
+ln SRR189041_2.fastq 2004-CO1_2.fastq
 
-## the reference
+# clean up folder
+mkdir original
+mv SRR* original
 
-``` bash
-mkdir refg
+# final test - how folder should look like 
+cd ..
+ln rawdata
+#-rw-rw-r-- 2 robert-kofler 32363766972 Jul 13 16:50 1850-H25_1.fastq
+#-rw-rw-r-- 2 robert-kofler 32363766972 Jul 13 16:50 1850-H25_2.fastq
+#-rw-rw-r-- 2 robert-kofler 73816095176 Jul 13 16:52 1875-H5_1.fastq
+#-rw-rw-r-- 2 robert-kofler 73816095176 Jul 13 16:52 1875-H5_2.fastq
+#-rw-rw-r-- 2 robert-kofler 16930082742 Jul 13 16:53 1936-Crimea_1.fastq
+#-rw-rw-r-- 2 robert-kofler 16930082742 Jul 13 16:53 1936-Crimea_2.fastq
+#-rw-rw-r-- 2 robert-kofler 11910913950 Jul 13 16:53 1958-Hikone_1.fastq
+#-rw-rw-r-- 2 robert-kofler 11910913950 Jul 13 16:53 1958-Hikone_2.fastq
+#-rw-rw-r-- 2 robert-kofler  9189478234 Jul 13 16:53 2004-CO1_1.fastq
+#-rw-rw-r-- 2 robert-kofler  9189478234 Jul 13 16:53 2004-CO1_2.fastq
+#-rw-rw-r-- 2 robert-kofler  2994152452 Jul 13 16:53 2004-I38_1.fastq
+#-rw-rw-r-- 2 robert-kofler  2994120144 Jul 13 16:53 2004-I38_2.fastq
+# drwxrwxr-x 8 robert-kofler        4096 Jul 22 14:30 original/
 ```
 
 ### the T2T reference genome
 
-Lets use the t2t assembly of Dmel published by
+We use the T2T assembly of **D. melanogaster** published by
 <https://www.nature.com/articles/s41467-025-67031-w>
 
 ``` bash
+# make new folder for reference genome
 mkdir refg-wg # reference genome - whole genome
+
+# download the T2t
 # available here https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_048772135.1/
-# prepare T2T; reformat fasta entry names; dont worry about details of this code although I'm quite proud i came up with this without claude ;)
-cat GCA_048772135.1_ASM4877213v1_genomic.fna |perl -pe 's/>.*?Canton S (chromosome )?([^,]+).*/>$2/' > ../../../../refg-wg/Dmel-canton-t2t.raw.fasta
- 
-# convert repeatmasked lowercase shit into upper case (perhaps i'm paranoid but i do not trust the lowercase)
-reader-fasta.py Dmel-canton-t2t.raw.fasta | fasta-formatter-fasta.py --upper |fasta-writter.py > Dmel-canton-t2t.clean.fasta
-# this is using my own bionicle library https://github.com/RobertKofler/bionicle
+# unzip and go to the folder with the fasta file (fna)
+
+# view the fasta names of the different contigs chromosomes
+cat GCA_048772135.1_ASM4877213v1_genomic.fna |grep '>'
+#>CM113948.1 Drosophila melanogaster strain Canton S chromosome X, whole genome shotgun sequence
+#>CM113949.1 Drosophila melanogaster strain Canton S chromosome 2L, whole genome shotgun sequence
+#>CM113950.1 Drosophila melanogaster strain Canton S chromosome 2R, whole genome shotgun sequence
+#>CM113951.1 Drosophila melanogaster strain Canton S chromosome 3L, whole genome shotgun sequence
+#>CM113952.1 Drosophila melanogaster strain Canton S chromosome 3R, whole genome shotgun sequence
+#>CM113953.1 Drosophila melanogaster strain Canton S chromosome 4, whole genome shotgun sequence
+#>CM113954.1 Drosophila melanogaster strain Canton S chromosome Y, whole genome shotgun sequence
+#>JBMFZO010000008.1 Drosophila melanogaster strain Canton S Contig1, whole genome shotgun sequence
+#>JBMFZO010000009.1 Drosophila melanogaster strain Canton S Contig2, whole genome shotgun sequence
+#>JBMFZO010000010.1 Drosophila melanogaster strain Canton S Contig3, whole genome shotgun sequence
+#>JBMFZO010000011.1 Drosophila melanogaster strain Canton S Contig4, whole genome shotgun sequence
+#>JBMFZO010000012.1 Drosophila melanogaster strain Canton S Contig5, whole genome shotgun sequence
+
+# conclusion: these are terrible chromosome/contig names and we need to change them
+# these names will generate a ton of problems in downstream analysis
 ```
 
-head of the file Dmel-canton-t2t.clean.fasta; note simple fasta name
-(just X) and the simple fasta characters (ATCG)
+Change the names of the fasta entries
 
-    >X
-    GTTACGTATTGCTCCAAATTACCTCCCAGCCAAAGCACCTGAAATACAAAAACAAAGAATTAATGCAATAAATAAATCAA
-    ATAAATACAAATACAATACTCACCCCAAATAACCTCCCAGCTAATTTACCTGAAAAAACAAAAATTAATACAATATTAAA
-    AACGAATAACAAATGTAATACTTACCAAATTTTAACTTTGTATTCATTTCCATGGCCCAAATCGTTGCGACGGTCCTCGG
-    CAACAAATCATGTTCCGGCGGCTCCTAGCTGCCAATCCCGACGCATTGGCCACAAGACGCGGCGCTCCTGGCAACTCTCG
-    ATGAATAACCGAGCTCCAATTTCCACGACGACTCTTCTGCCAAACGAGTCAGATTACACCAACATAATGCCAGCAGCTCC
-    CAAACAATGCAATGACGGCTGCGCGGGATCCATCTTCAGATTTTCTTCTTCCCGACGACCGGCTAAGCTGCCCTGCAATT
-    TAAGAAATTTTATTAAACAATTGCAAATATCTACCACTGAGGGTGGTAGATACAACCACCAAATGACAGCGGCGCGGGAT
-    ACACCCACCACGAATAGGCTTTCTGCAGCGCTGGCCGGACATGCATGTTGCAAGCGACGCGCATTCAGCGTCCACAACAA
-    GCCCCAGCCAGAATACAACAAACACTCACCTGCAATGTTTCCTGAGGCTTCCAGCGACTCGGTGCTTCCGTCCTTCTGGC
+``` bash
+# reformat the fasta names
+cat GCA_048772135.1_ASM4877213v1_genomic.fna |perl -pe 's/>.*?Canton S (chromosome )?([^,]+).*/>$2/' > ../../../../refg-wg/Dmel-canton-t2t.raw.fasta
+# this perl command is prety cool and reformats the fasta entry names; 
+# dont worry about details of this code although I'm quite proud i came up with this code WITHOUT claude ;)
+
+cat Dmel-canton-t2t.raw.fasta |grep '>'
+#>X
+#>2L
+#>2R
+#>3L
+#>3R
+#>4
+#>Y
+#>Contig1
+#>Contig2
+#>Contig3
+#>Contig4
+#>Contig5
+
+# conclusion: name conversion worked; these are pretty names - minimal and no weird characters - that will likely not generate problems downstream
+```
+
+Finally convert to upper case; I do not trust the mix of lower-case with
+upper-case sequences. Admittedly I may be paranoid, but there is
+certainly software that has problems when some sequences are lowercase
+and others are uppercase. However, this softmasking (repeats are
+lowercase) seems to be important for AUGUSTUS and BRAKER, and perhaps
+speeds up blastn
+
+``` bash
+
+# use seqtk
+conda install -c conda-forge -c bioconda seqtk seqkit
+seqtk seq -U -l 80 Dmel-canton-t2t.raw.fasta > ../Dmel-canton.fasta
+
+# finally index for mapping
+bwa index Dmel-canton.fasta
+```
+
+## the reference for estimating TE copy numbers
+
+For estimating TE copy numbers we need a reference consisting of TE
+sequences and single copy genes.
+
+### single copy genes
+
+We start with the single copy genes; thee scg are uploaded with this
+tutorial; this illustrates one important principle: upload small data
+files that may be helpful for the analysis.
+
+``` bash
+# first put the scg into a separte folder
+mkdir refg
+
+# now lets insepect the sequences
+# lets use seqkit which is amazingly powerful; you may choose what to display
+# lets pick the name (-n) the length (-l) and the gc-content (-g)
+seqkit fx2tab -nlg scg_rhi_tj_rpl32.fa
+# Dmel_rhi  9026    41.18
+# Dmel_rpl32    4933    50.86
+# Dmel_tj   7492    45.65
+```
+
+Next lets make sure these are actually single copy genes. Lets map them
+to the T2T assembly
+
+``` bash
+# align with minimap2
+conda install -c conda-forge -c bioconda minimap2 
+# parameters asm5 specify alignment in same species; or close strain
+minimap2 -x asm5 ../refg-wg/Dmel-canton.fasta scg_rhi_tj_rpl32.fa > scg_rhi_tj_rpl32.paf 
+cat scg_rhi_tj_rpl32.paf
+#Dmel_rhi   9026    56  9012    +   2R  25256157    17472349    17481017    7550    8983    60  tp:A:P  cm:i:720    s1:i:7488   s2:i:0  dv:f:0.0004 rl:i:0
+#Dmel_rpl32 4933    11  4920    +   3R  34507726    32434168    32439077    4909    4909    60  tp:A:P  cm:i:491    s1:i:4909   s2:i:0  dv:f:0.0001 rl:i:0
+#Dmel_tj    7492    1   7475    +   2L  24366070    19617917    19625428    6875    7517    60  tp:A:P  cm:i:675    s1:i:6863   s2:i:0  dv:f:0.0003 rl:i:0
+
+# conclusion: every gene has just one entry; extending over the entire sequence; so they are clearly single-copy genes
+```
+
+### TE sequences
+
+lets download the TE sequences of Dmel and inspect them.
+
+``` bash
+seqkit fx2tab -nlg dmel-tes.fasta
+#Tc3    1743    33.33
+#1731   4648    46.21
+# ...
+# ...
+#P-element  2907    36.91
+#gypsy1 7718    47.65
+#Spoink 5216    39.76
+#McLE   5360    40.90
+#Souslik    5275    45.00
+#Transib1   3030    32.28
+#Kuruka 8833    40.09
+# => nice many TEs including Kuruka, Spoink, Transib1, Souslik, MLE (McLE)
+
+# lets see how many we have
+seqkit fx2tab -nlg dmel-tes.fasta |wc
+#    132     396    2366
+# we have 132 TE consensus seuqences
+```
