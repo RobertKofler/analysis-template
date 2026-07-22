@@ -5,15 +5,25 @@
 # Intro
 
 This is a guide showing students on how to best perform bioinformatics
-analysis. Document analysis carefully in RMarkdown. Translate into a
-github_document and upload everything into github. Furthermore use conda
-to manage software installation and make it reproducible. Upload small
-files that may be helful for analyis. In any case always upload the
-processed data that allow to regenerate each figure
+analysis.
+
+1.  Document analysis carefully in RMarkdown (as shown here).
+2.  Translate the RMarkdown into a github_document
+3.  Upload the RMarkdown and the resulting files to github
+
+**General principles**
+
+- Use conda to manage software installation and make it reproducible.
+- Also upload small files that may be helful for analyis.
+- In any case always upload the data (can be quite processed) that allow
+  to regenerate each figure. Especially figures shown in publications
+  (main and supplement) and master thesis.
 
 **Scientific question** The scientific question of this mini-tutorial is
 whether we can reproduce the finding that several TEs increased in copy
-numbers in recent years.
+numbers in recent years
+(e.g. <https://www.pnas.org/doi/10.1073/pnas.2313866121>,
+<https://academic.oup.com/mbe/article/42/7/msaf143/8157961>)
 
 ## Conda
 

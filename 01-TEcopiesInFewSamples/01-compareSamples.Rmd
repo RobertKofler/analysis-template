@@ -9,37 +9,50 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Intro
-This is a guide showing students on how to best perform bioinformatics analysis. 
-Document analysis carefully in RMarkdown. Translate into a github_document and upload everything into github. Furthermore use conda to manage software installation and make it reproducible. Upload small files that may be helful for analyis. In any case always upload the processed data that allow to regenerate each figure 
+This is a guide showing students on how to best perform bioinformatics analysis.
+
+1. Document analysis carefully in RMarkdown (as shown here). 
+2. Translate the RMarkdown into a github_document
+3. Upload the RMarkdown and the resulting files to github
+
+**General principles**
+
+* Use conda to manage software installation and make it reproducible.
+* Also upload small files that may be helful for analyis. 
+* In any case always upload the data (can be quite processed) that allow to regenerate each figure. Especially figures shown in publications (main and supplement) and master thesis. 
 
 **Scientific question**
-The scientific question of this mini-tutorial is whether we can reproduce the finding that several TEs increased in copy numbers in recent years.
+The scientific question of this mini-tutorial is whether we can reproduce the finding that several TEs increased in copy numbers in recent years (e.g. https://www.pnas.org/doi/10.1073/pnas.2313866121, https://academic.oup.com/mbe/article/42/7/msaf143/8157961)
 
 ## Conda
 
-Make a separate Conda environment for each publication, or even each separate analysis
+Make a separate Conda environment for each publication, or even for each analysis
 ```{bash eval=FALSE}
-# create environment; pin software version -> reproducibility
+# create environment; if feasible aim to pin software versions
 conda create -n tutorial bwa=0.7.19 samtools=1.3.1
 
 # enter the new environment
 conda  activate tutorial
 ```
 
-## The Data
+# The Data
 
-The tutorial will be done in a neww folder 2026-tutorial.
-The first analysis receives a subfolder 01-compFewStrains (compare a few strains).
-But I think that 2026-07-13-compFewStrains may be a better name
+The tutorial will be done in a new folder that I called '2026-tutorial'.
+This analysis will be done in the subfolder 01-compFewStrains (compare a few strains).
+However I would recommend the following name '2026-07-13-compFewStrains'
+
+Here I introduce another bioinformatics commandment: 
+**thou should have all data necessary for performing an analysis in the deticated analysis-folder**
+
 
 ```{bash eval=FALSE}
-# move into the newly generated folder (mkdir)
+# move into the newly generated folder
 cd /home/robert-kofler/analysis/2026-tutorial/01-compFewStrains
 ```
 
 
-### the short read data
-We will use the following short read data sets. Note the collection date (year) varies from 1850 to 2004; extracted from 'sup_file_1_short-reads' from https://pubmed.ncbi.nlm.nih.gov/40479505/
+## the short read data
+First we will obtain the short read data. We will use the following short read data sets. Note the collection date (year) varies from 1850 to 2004; extracted from 'sup_file_1_short-reads' from https://pubmed.ncbi.nlm.nih.gov/40479505/
 
 ```
 SRR23876569	H25		PRJNA945389	Shpak2023	1850	Passau, Germany	49	13
@@ -58,10 +71,10 @@ mkdir rawdata
 cd rawdata
 ```
 
-Download with separate sra environment
+Download using separate sra environment
 ```{bash eval=FALSE}
 # for me it was necessary to generate a dedicated sra environment
-# otherwise i ended up with an updated version
+# otherwise i ended up with an outdated sra-tools version
 conda create -n sra -c conda-forge -c bioconda "sra-tools>=3.1"
 conda activate sra
 
@@ -71,22 +84,45 @@ prefetch SRR23876569 SRR23876565 SRR11846555 SRR11846565 SRR1663560 SRR189041
 fasterq-dump SRR23876569 SRR23876565 SRR11846555 SRR11846565 SRR1663560 SRR189041
 ```
 
-Rename the files to get a bit more intuitive names using ln (**thats important i generate hard links, so the original file name will NOT be changed** avoiding potential confusion)
+Rename the files to get a bit more intuitive names using ln. 
+ln generates hard-links - **it is important to generate hard links** as the original file name will not be changed nor will the data be duplicated.
 ```{bash eval=FALSE}
-ln SRR23876569_1.fastq H25-1850_1.fastq
-ln SRR23876569_2.fastq H25-1850_2.fastq
+ln SRR23876569_1.fastq 1850-H25_1.fastq
+ln SRR23876569_2.fastq 1850-H25_2.fastq
 
-ln SRR23876565_1.fastq H5-1875_1.fastq
-ln SRR23876565_2.fastq H5-1875_2.fastq
+ln SRR23876565_1.fastq 1875-H5_1.fastq
+ln SRR23876565_2.fastq 1875-H5_2.fastq
 
-ln SRR11846555_1.fastq Crimea-1936_1.fastq
+ln SRR11846555_1.fastq 1936-Crimea_1.fastq
+ln SRR11846555_2.fastq 1936-Crimea_2.fastq
 
-ln SRR11846565_1.fastq Hikone-1958_1.fastq
+ln SRR11846565_1.fastq 1958-Hikone_1.fastq
+ln SRR11846565_2.fastq 1958-Hikone_2.fastq
 
-ln SRR1663560_1.fastq I38-2004_1.fastq
+ln SRR1663560_1.fastq 2004-I38_1.fastq
+ln SRR1663560_2.fastq 2004-I38_2.fastq
 
-ln SRR189041_1.fastq CO1-2004_1.fastq
-# TODO
+ln SRR189041_1.fastq 2004-CO1_1.fastq
+ln SRR189041_2.fastq 2004-CO1_2.fastq
+
+
+mkdir original
+mv SRR* original
+cd ..
+ln rawdata
+#-rw-rw-r-- 2 robert-kofler 32363766972 Jul 13 16:50 1850-H25_1.fastq
+#-rw-rw-r-- 2 robert-kofler 32363766972 Jul 13 16:50 1850-H25_2.fastq
+#-rw-rw-r-- 2 robert-kofler 73816095176 Jul 13 16:52 1875-H5_1.fastq
+#-rw-rw-r-- 2 robert-kofler 73816095176 Jul 13 16:52 1875-H5_2.fastq
+#-rw-rw-r-- 2 robert-kofler 16930082742 Jul 13 16:53 1936-Crimea_1.fastq
+#-rw-rw-r-- 2 robert-kofler 16930082742 Jul 13 16:53 1936-Crimea_2.fastq
+#-rw-rw-r-- 2 robert-kofler 11910913950 Jul 13 16:53 1958-Hikone_1.fastq
+#-rw-rw-r-- 2 robert-kofler 11910913950 Jul 13 16:53 1958-Hikone_2.fastq
+#-rw-rw-r-- 2 robert-kofler  9189478234 Jul 13 16:53 2004-CO1_1.fastq
+#-rw-rw-r-- 2 robert-kofler  9189478234 Jul 13 16:53 2004-CO1_2.fastq
+#-rw-rw-r-- 2 robert-kofler  2994152452 Jul 13 16:53 2004-I38_1.fastq
+#-rw-rw-r-- 2 robert-kofler  2994120144 Jul 13 16:53 2004-I38_2.fastq
+# drwxrwxr-x 8 robert-kofler        4096 Jul 22 14:30 original/
 ```
 
 
