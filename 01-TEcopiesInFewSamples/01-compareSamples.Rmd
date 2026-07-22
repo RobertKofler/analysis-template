@@ -50,6 +50,13 @@ Here I introduce another bioinformatics commandment:
 cd /home/robert-kofler/analysis/2026-tutorial/01-compFewStrains
 ```
 
+The tutorial needs three data sets:
+
+* short reads of __D. melanogaster__ strains sampled at different years during the last century.
+* a long read assembly; it will be used to validate that the single copy genes are really single copy, i.e. occur just once in the reference genome
+* a TE library plus single copy genes; this is the basis for any analysis of TE copy number e.g. with DeviaTE, reveal/seqvista
+
+
 
 ## the short read data
 First we will obtain the short read data. We will use the following short read data sets. Note the collection date (year) varies from 1850 to 2004; extracted from 'sup_file_1_short-reads' from https://pubmed.ncbi.nlm.nih.gov/40479505/
@@ -105,9 +112,11 @@ ln SRR1663560_2.fastq 2004-I38_2.fastq
 ln SRR189041_1.fastq 2004-CO1_1.fastq
 ln SRR189041_2.fastq 2004-CO1_2.fastq
 
-
+# clean up folder
 mkdir original
 mv SRR* original
+
+# final test - how folder should look like 
 cd ..
 ln rawdata
 #-rw-rw-r-- 2 robert-kofler 32363766972 Jul 13 16:50 1850-H25_1.fastq
@@ -126,41 +135,110 @@ ln rawdata
 ```
 
 
-## the reference
-```{bash eval=FALSE}
-mkdir refg
-
-
-```
 
 ### the T2T reference genome
-Lets use the t2t assembly of Dmel published by https://www.nature.com/articles/s41467-025-67031-w
+We use the T2T assembly of __D. melanogaster__ published by https://www.nature.com/articles/s41467-025-67031-w
 
 ```{bash eval=FALSE}
+# make new folder for reference genome
 mkdir refg-wg # reference genome - whole genome
+
+# download the T2t
 # available here https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_048772135.1/
-# prepare T2T; reformat fasta entry names; dont worry about details of this code although I'm quite proud i came up with this without claude ;)
+# unzip and go to the folder with the fasta file (fna)
+
+# view the fasta names of the different contigs chromosomes
+cat GCA_048772135.1_ASM4877213v1_genomic.fna |grep '>'
+#>CM113948.1 Drosophila melanogaster strain Canton S chromosome X, whole genome shotgun sequence
+#>CM113949.1 Drosophila melanogaster strain Canton S chromosome 2L, whole genome shotgun sequence
+#>CM113950.1 Drosophila melanogaster strain Canton S chromosome 2R, whole genome shotgun sequence
+#>CM113951.1 Drosophila melanogaster strain Canton S chromosome 3L, whole genome shotgun sequence
+#>CM113952.1 Drosophila melanogaster strain Canton S chromosome 3R, whole genome shotgun sequence
+#>CM113953.1 Drosophila melanogaster strain Canton S chromosome 4, whole genome shotgun sequence
+#>CM113954.1 Drosophila melanogaster strain Canton S chromosome Y, whole genome shotgun sequence
+#>JBMFZO010000008.1 Drosophila melanogaster strain Canton S Contig1, whole genome shotgun sequence
+#>JBMFZO010000009.1 Drosophila melanogaster strain Canton S Contig2, whole genome shotgun sequence
+#>JBMFZO010000010.1 Drosophila melanogaster strain Canton S Contig3, whole genome shotgun sequence
+#>JBMFZO010000011.1 Drosophila melanogaster strain Canton S Contig4, whole genome shotgun sequence
+#>JBMFZO010000012.1 Drosophila melanogaster strain Canton S Contig5, whole genome shotgun sequence
+
+# conclusion: these are terrible chromosome/contig names and we need to change them
+# these names will generate a ton of problems in downstream analysis
+```
+
+Change the names of the fasta entries
+```{bash eval=FALSE}
+# reformat the fasta names
 cat GCA_048772135.1_ASM4877213v1_genomic.fna |perl -pe 's/>.*?Canton S (chromosome )?([^,]+).*/>$2/' > ../../../../refg-wg/Dmel-canton-t2t.raw.fasta
- 
-# convert repeatmasked lowercase shit into upper case (perhaps i'm paranoid but i do not trust the lowercase)
-reader-fasta.py Dmel-canton-t2t.raw.fasta | fasta-formatter-fasta.py --upper |fasta-writter.py > Dmel-canton-t2t.clean.fasta
-# this is using my own bionicle library https://github.com/RobertKofler/bionicle
+# this perl command is prety cool and reformats the fasta entry names; 
+# dont worry about details of this code although I'm quite proud i came up with this code WITHOUT claude ;)
+
+cat Dmel-canton-t2t.raw.fasta |grep '>'
+#>X
+#>2L
+#>2R
+#>3L
+#>3R
+#>4
+#>Y
+#>Contig1
+#>Contig2
+#>Contig3
+#>Contig4
+#>Contig5
+
+# conclusion: name conversion worked; these are pretty names - minimal and no weird characters - that will likely not generate problems downstream
 ```
 
-head of the file Dmel-canton-t2t.clean.fasta; note simple fasta name (just X) and the simple fasta characters (ATCG)
-```
->X
-GTTACGTATTGCTCCAAATTACCTCCCAGCCAAAGCACCTGAAATACAAAAACAAAGAATTAATGCAATAAATAAATCAA
-ATAAATACAAATACAATACTCACCCCAAATAACCTCCCAGCTAATTTACCTGAAAAAACAAAAATTAATACAATATTAAA
-AACGAATAACAAATGTAATACTTACCAAATTTTAACTTTGTATTCATTTCCATGGCCCAAATCGTTGCGACGGTCCTCGG
-CAACAAATCATGTTCCGGCGGCTCCTAGCTGCCAATCCCGACGCATTGGCCACAAGACGCGGCGCTCCTGGCAACTCTCG
-ATGAATAACCGAGCTCCAATTTCCACGACGACTCTTCTGCCAAACGAGTCAGATTACACCAACATAATGCCAGCAGCTCC
-CAAACAATGCAATGACGGCTGCGCGGGATCCATCTTCAGATTTTCTTCTTCCCGACGACCGGCTAAGCTGCCCTGCAATT
-TAAGAAATTTTATTAAACAATTGCAAATATCTACCACTGAGGGTGGTAGATACAACCACCAAATGACAGCGGCGCGGGAT
-ACACCCACCACGAATAGGCTTTCTGCAGCGCTGGCCGGACATGCATGTTGCAAGCGACGCGCATTCAGCGTCCACAACAA
-GCCCCAGCCAGAATACAACAAACACTCACCTGCAATGTTTCCTGAGGCTTCCAGCGACTCGGTGCTTCCGTCCTTCTGGC
+Finally convert to upper case; I do not trust the mix of lower-case with upper-case sequences. Admittedly I may be paranoid, but there is certainly software that has problems when some sequences are lowercase and others are uppercase. However, this softmasking (repeats are lowercase) seems to be important for AUGUSTUS and BRAKER, and perhaps speeds up blastn
+```{bash eval=FALSE}
 
+# use seqtk
+conda install -c conda-forge -c bioconda seqtk seqkit
+seqtk seq -U -l 80 Dmel-canton-t2t.raw.fasta > ../Dmel-canton.fasta
+
+# finally index for mapping
+bwa index Dmel-canton.fasta
 ```
 
+
+## the reference for estimating TE copy numbers
+For estimating TE copy numbers we need a reference consisting of TE sequences and single copy genes. 
+
+### single copy genes
+We start with the single copy genes; thee scg are uploaded with this tutorial; this illustrates one important principle: upload small data files that may be helpful for the analysis.
+
+```{bash eval=FALSE}
+# first put the scg into a separte folder
+mkdir refg
+
+# now lets insepect the sequences
+# lets use seqkit which is amazingly powerful; you may choose what to display
+# lets pick the name (-n) the length (-l) and the gc-content (-g)
+seqkit fx2tab -nlg scg_rhi_tj_rpl32.fa
+# Dmel_rhi	9026	41.18
+# Dmel_rpl32	4933	50.86
+# Dmel_tj	7492	45.65
+```
+
+Next lets make sure these are actually single copy genes. Lets map them to the T2T assembly
+```{bash eval=FALSE}
+# align with minimap2
+conda install -c conda-forge -c bioconda minimap2 
+# parameters asm5 specify alignment in same species; or close strain
+minimap2 -x asm5 ../refg-wg/Dmel-canton.fasta scg_rhi_tj_rpl32.fa > scg_rhi_tj_rpl32.paf 
+cat scg_rhi_tj_rpl32.paf
+#Dmel_rhi	9026	56	9012	+	2R	25256157	17472349	17481017	7550	8983	60	tp:A:P	cm:i:720	s1:i:7488	s2:i:0	dv:f:0.0004	rl:i:0
+#Dmel_rpl32	4933	11	4920	+	3R	34507726	32434168	32439077	4909	4909	60	tp:A:P	cm:i:491	s1:i:4909	s2:i:0	dv:f:0.0001	rl:i:0
+#Dmel_tj	7492	1	7475	+	2L	24366070	19617917	19625428	6875	7517	60	tp:A:P	cm:i:675	s1:i:6863	s2:i:0	dv:f:0.0003	rl:i:0
+
+# conclusion: every gene has just one entry; extending over the entire sequence; so they are clearly single-copy genes
+```
+
+### TE sequences
+lets download the TE sequences of Dmel and inspect them.
+```{bash eval=FALSE}
+
+```
 
 
