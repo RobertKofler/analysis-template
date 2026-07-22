@@ -238,7 +238,24 @@ cat scg_rhi_tj_rpl32.paf
 ### TE sequences
 lets download the TE sequences of Dmel and inspect them.
 ```{bash eval=FALSE}
+seqkit fx2tab -nlg dmel-tes.fasta
+#Tc3	1743	33.33
+#1731	4648	46.21
+# ...
+# ...
+#P-element	2907	36.91
+#gypsy1	7718	47.65
+#Spoink	5216	39.76
+#McLE	5360	40.90
+#Souslik	5275	45.00
+#Transib1	3030	32.28
+#Kuruka	8833	40.09
+# => nice many TEs including Kuruka, Spoink, Transib1, Souslik, MLE (McLE)
 
+# lets see how many we have
+seqkit fx2tab -nlg dmel-tes.fasta |wc
+#    132     396    2366
+# we have 132 TE consensus seuqences
 ```
 
 
