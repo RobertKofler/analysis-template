@@ -271,9 +271,9 @@ seqkit fx2tab -nlg ../dmel-tes-scg.fasta|wc
 bwa index dmel-tes-scg.fasta
 ```
 # Main analysis
-## mapping
-Lets map the short read data to the TE-reference.
-One question is should we use single-end or paired-end mappigns. Actually good question, and I have no idea. Paired end is more data, but could this lead to problems as our refernce sequence are rather short. So lets just try both
+## simple mapping single end
+Lets start with the simples strategy: we only use one read of the paired-end and map the short read data to the TE-reference with bwa mem, which performs a local alignment so that adaptors should be removed during alignments.
+
 
 single end mappging
 ```{bash eval=FALSE}
@@ -289,12 +289,60 @@ bwa mem -t 8 $ref $in/1875-H5_1.fastq | samtools sort -@ 4 -o $out/1875-H5.sort.
 bwa mem -t 8 $ref $in/1936-Crimea_1.fastq | samtools sort -@ 4 -o $out/1936-Crimea.sort.bam -
 bwa mem -t 8 $ref $in/1958-Hikone_1.fastq | samtools sort -@ 4 -o $out/1958-Hikone.sort.bam -
 bwa mem -t 8 $ref $in/2004-CO1_1.fastq | samtools sort -@ 4 -o $out/2004-CO1.sort.bam -
-bwa mem -t 8 $ref $in/2004-I38.fastq | samtools sort -@ 4 -o $out/2004-I38.sort.bam -
+bwa mem -t 8 $ref $in/2004-I38_1.fastq | samtools sort -@ 4 -o $out/2004-I38.sort.bam -
 # End shell script
-
 
 # start mapping
 zsh map.sh
+
+# index them all for later IGV
+for i in *.bam; do samtools index $i; done
 ```
+## intuitive epxloration
+So lets inspect the data in IGV; use the refg as reference
+### scg
+The single copy gene should have a uniform coverage in all samples; As an example lets use tj (traffic jam); this is indeed the case
 
+**tj**
 
+![tj](01-compareSamples_files/tj.png){fig.width = 3}
+### no invaders
+lets move to TEs that did not invade. Diver and roo
+
+**Diver**
+
+![Diver](01-compareSamples_files/diver.png)
+**roo**
+
+![roo](01-compareSamples_files/roo.png)
+
+### early invaders in 19th century
+lets move to TEs that invaded in the 19th century; Opus and 412
+
+**412**
+![412](01-compareSamples_files/412.png)
+**Opus**
+![opus](01-compareSamples_files/Opus.png)
+
+### late invaders in 20th century
+lets move to TEs that invaded in the 19th century; P-element and Spoink
+
+**P-element**
+![P-element](01-compareSamples_files/Pelement.png)
+**Spoink**
+
+![Spoink](01-compareSamples_files/Spoink.png)
+
+## exploring alternatives
+Ideally we would do two things: 1) utilize paired ends and 2) remove adaptors.
+This can (and should) be done with a single step, using AdaptorRemoval
+```{bash eval=FALSE}
+conda install -c conda-forge -c bioconda adapterremoval 
+AdapterRemoval --file1 1850-H25_1.fastq --file2 1850-H25_2.fastq --collapse --minlength 25 --minadapteroverlap 1 --gzip --threads 8 
+
+# i will just use the collapsed output (the non-collapsed are not manyy)
+mv your_output.collapsed.gz 1850-H25.collapsed.gz 
+#since reads are trimmed we can use the recommended semi-global alignment bwa aln
+bwa aln -l 1024 -n 0.01 -o 2 -t 8 refg/dmel-tes-scg.fasta rawdata/1850-H25.collapsed.gz > map-se/1850-H25.collapsed.sai
+
+```
