@@ -342,8 +342,8 @@ example lets use tj (traffic jam); this is indeed the case
 
 **tj**
 
-![tj](01-compareSamples_files/tj.png){fig.width = 3} \### no invaders
-lets move to TEs that did not invade. Diver and roo
+![tj](01-compareSamples_files/tj.png) \### no invaders lets move to TEs
+that did not invade. Diver and roo
 
 **Diver**
 
@@ -372,6 +372,58 @@ lets move to TEs that invaded in the 19th century; P-element and Spoink
 <img src="01-compareSamples_files/Spoink.png" alt="Spoink" />
 <figcaption aria-hidden="true">Spoink</figcaption>
 </figure>
+
+### Conclusion
+
+Explorative analysis in IGV confirms that scg-tj, Diver and roo show no
+differnce in the samples, Opus and 412 invaded in the 19th century and
+P-element and Spoink in the 20th century. However this was a very crude
+analysis. Most importantly we did not normalize the read numbers yet, we
+need to normalize to the coverage of single copy genes.
+
+## Normalizing to coverage with scg - teplotter
+
+``` bash
+# install
+git clone git@github.com:RobertKofler/teplotter.git
+git checkout -b robert
+# add teplotter to path
+# and install dependency
+conda install -c conda-forge -c bioconda pysam  
+```
+
+**convert bam into so (sequence overview)**
+
+``` bash
+bam2so.py --infile map-se/1850-H25.sort.bam --fasta refg/dmel-tes-scg.fasta --outfile sose/1850-H25.so
+bam2so.py --infile map-se/1875-H5.sort.bam --fasta refg/dmel-tes-scg.fasta --outfile sose/1875-H5.so
+bam2so.py --infile map-se/1936-Crimea.sort.bam --fasta refg/dmel-tes-scg.fasta --outfile sose/1936-Crimea.so
+bam2so.py --infile map-se/1958-Hikone.sort.bam --fasta refg/dmel-tes-scg.fasta --outfile sose/1958-Hikone.so
+bam2so.py --infile map-se/2004-CO1.sort.bam --fasta refg/dmel-tes-scg.fasta --outfile sose/2004-CO1.so
+bam2so.py --infile map-se/2004-I38.sort.bam --fasta refg/dmel-tes-scg.fasta --outfile sose/2004-I38.so
+```
+
+**normalize**
+
+``` bash
+normalize-so.py --so 1850-H25.so --scg-begin "Dmel_" --output-file 1850-H25.norm.so
+normalize-so.py --so 1875-H5.so --scg-begin "Dmel_" --output-file 1875-H5.norm.so
+normalize-so.py --so 1936-Crimea.so --scg-begin "Dmel_" --output-file 1936-Crimea.norm.so
+normalize-so.py --so 1958-Hikone.so --scg-begin "Dmel_" --output-file 1958-Hikone.norm.so
+normalize-so.py --so 2004-CO1.so --scg-begin "Dmel_" --output-file 2004-CO1.norm.so
+normalize-so.py --so 2004-I38.so --scg-begin "Dmel_" --output-file 2004-I38.norm.so
+```
+
+**estimate copy number of all TEs**
+
+``` bash
+estimate-so.py --so 1850-H25.norm.so --sample-id 1850-H25 > estimate/1850-H25.estimate
+estimate-so.py --so 1875-H5.norm.so --sample-id 1875-H5 > estimate/1875-H5.estimate
+estimate-so.py --so 1958-Hikone.norm.so --sample-id 1958-Hikone > estimate/1958-Hikone.estimate
+estimate-so.py --so 1936-Crimea.norm.so --sample-id 1936-Crimea > estimate/1936-Crimea.estimate
+estimate-so.py --so 2004-CO1.norm.so --sample-id 2004-CO1 > estimate/2004-CO1.estimate
+estimate-so.py --so 2004-I38.norm.so --sample-id 2004-I38 > estimate/2004-I38.estimate
+```
 
 ## exploring alternatives
 
