@@ -1,0 +1,17 @@
+name: tutorial
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - bwa=0.7.19
+  - samtools=1.24
+  - aria2
+  - sra-tools
+  - pigz
+  - seqtk
+  - seqkit
+  - minimap2
+  - adapterremoval
+  - pysam
+  - r-tidyverse
+prefix: /home/robert-kofler/miniforge3/envs/tutorial

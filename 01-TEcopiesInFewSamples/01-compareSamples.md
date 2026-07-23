@@ -307,7 +307,8 @@ bwa index dmel-tes-scg.fasta
 Lets start with the simples strategy: we only use one read of the
 paired-end and map the short read data to the TE-reference with bwa mem,
 which performs a local alignment so that adaptors should be removed
-during alignments.
+during alignments. **ALWAYS start with the simple approach first**
+Gradually add complexity where needed
 
 single end mappging
 
@@ -375,11 +376,12 @@ lets move to TEs that invaded in the 19th century; P-element and Spoink
 
 ### Conclusion
 
-Explorative analysis in IGV confirms that scg-tj, Diver and roo show no
-differnce in the samples, Opus and 412 invaded in the 19th century and
-P-element and Spoink in the 20th century. However this was a very crude
-analysis. Most importantly we did not normalize the read numbers yet, we
-need to normalize to the coverage of single copy genes.
+Already our xxplorative analysis in IGV confirms the recent invasions.
+The scg tj, Diver and roo show no differnce in the samples, Opus and 412
+invaded in the 19th century and P-element and Spoink in the 20th
+century. However this was a very crude analysis. Most importantly we did
+not normalize the read numbers yet, we need to normalize to the coverage
+of single copy genes. We use TEplotter (deviate-derivate)
 
 ## Normalizing to coverage with scg - teplotter
 
@@ -395,24 +397,151 @@ conda install -c conda-forge -c bioconda pysam
 **convert bam into so (sequence overview)**
 
 ``` bash
-bam2so.py --infile map-se/1850-H25.sort.bam --fasta refg/dmel-tes-scg.fasta --outfile sose/1850-H25.so
-bam2so.py --infile map-se/1875-H5.sort.bam --fasta refg/dmel-tes-scg.fasta --outfile sose/1875-H5.so
-bam2so.py --infile map-se/1936-Crimea.sort.bam --fasta refg/dmel-tes-scg.fasta --outfile sose/1936-Crimea.so
-bam2so.py --infile map-se/1958-Hikone.sort.bam --fasta refg/dmel-tes-scg.fasta --outfile sose/1958-Hikone.so
-bam2so.py --infile map-se/2004-CO1.sort.bam --fasta refg/dmel-tes-scg.fasta --outfile sose/2004-CO1.so
-bam2so.py --infile map-se/2004-I38.sort.bam --fasta refg/dmel-tes-scg.fasta --outfile sose/2004-I38.so
+bam2so.py --infile map-se/1958-Hikone.sort.bam --fasta refg/dmel-tes-scg.fasta --output-file sose2/tmp/1958-Hikone.so &
+bam2so.py --infile map-se/1958-Crimea.sort.bam --fasta refg/dmel-tes-scg.fasta --output-file sose2/tmp/1936-Crimea.so &
+bam2so.py --infile map-se/1936-Crimea.sort.bam --fasta refg/dmel-tes-scg.fasta --output-file sose2/tmp/1936-Crimea.so &
+bam2so.py --infile map-se/1850-H25.sort.bam --fasta refg/dmel-tes-scg.fasta --output-file sose2/tmp/1850-H25.so &
+bam2so.py --infile map-se/1875-H5.sort.bam --fasta refg/dmel-tes-scg.fasta --output-file sose2/tmp/1875-H5.so &
+bam2so.py --infile map-se/2004-CO1.sort.bam --fasta refg/dmel-tes-scg.fasta --output-file sose2/tmp/2004-CO1.so &
 ```
 
 **normalize**
 
 ``` bash
-normalize-so.py --so 1850-H25.so --scg-begin "Dmel_" --output-file 1850-H25.norm.so
-normalize-so.py --so 1875-H5.so --scg-begin "Dmel_" --output-file 1875-H5.norm.so
-normalize-so.py --so 1936-Crimea.so --scg-begin "Dmel_" --output-file 1936-Crimea.norm.so
-normalize-so.py --so 1958-Hikone.so --scg-begin "Dmel_" --output-file 1958-Hikone.norm.so
-normalize-so.py --so 2004-CO1.so --scg-begin "Dmel_" --output-file 2004-CO1.norm.so
-normalize-so.py --so 2004-I38.so --scg-begin "Dmel_" --output-file 2004-I38.norm.so
+normalize-so.py --so tmp/1850-H25.so --scg-begin 'Dmel' --output-file 1850-H25.norm.so
+normalize-so.py --so tmp/1875-H5.so --scg-begin 'Dmel' --output-file 1875-H5.norm.so
+normalize-so.py --so tmp/1936-Crimea.so --scg-begin 'Dmel' --output-file 1936-Crimea.norm.so
+normalize-so.py --so tmp/1936-Hikone.so --scg-begin 'Dmel' --output-file 1958-Hikone.norm.so
+normalize-so.py --so tmp/1958-Hikone.so --scg-begin 'Dmel' --output-file 1958-Hikone.norm.so
+normalize-so.py --so tmp/2004-CO1.so --scg-begin 'Dmel' --output-file 2004-CO1.norm.so
+normalize-so.py --so tmp/2004-I38.so --scg-begin 'Dmel' --output-file 2004-I38.norm.so
 ```
+
+**lets plot some**
+
+``` bash
+# shell script
+so2plotable.py --so 1850-H25.norm.so --seq-ids opus,P-element,McLE --sample-id 1850-H25  --mask-ymax 50  > toplo/1850-H25.plotable
+so2plotable.py --so 1875-H5.norm.so --seq-ids opus,P-element,McLE --sample-id 1875-H5  --mask-ymax 50 > toplo/1875-H5.plotable
+so2plotable.py --so 1936-Crimea.norm.so --seq-ids opus,P-element,McLE --sample-id 1936-Crimea --mask-ymax 50 > toplo/1936-Crimea.plotable
+so2plotable.py --so 1958-Hikone.norm.so --seq-ids opus,P-element,McLE --sample-id 1958-Hikone --mask-ymax 50 > toplo/1958-Hikone.plotable
+so2plotable.py --so 2004-CO1.norm.so --seq-ids opus,P-element,McLE --sample-id 2004-CO1 --mask-ymax 50 > toplo/2004-CO1.plotable
+so2plotable.py --so 2004-I38.norm.so --seq-ids opus,P-element,McLE --sample-id 2004-I38 --mask-ymax 50 > toplo/2004-I38.plotable
+cat toplo/*plotable > toplo/toplot
+```
+
+**lets plot** Ideally one should upload the toplot file, as it is the
+input for the grafik; unfortunatelly its \>2Mb thats why I do not do it.
+But this nicely illustrates how important it is to upload the input
+files, because this figure is now irreproducible; at least it requires a
+major effort and redo all analsysis. Note that RMarkdown integrates the
+figure automatically into the md (i did not have to do anything)
+
+``` r
+# Rscript visualize-plotable.R input.plotable output.png
+library(tidyverse)  
+```
+
+    ## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+    ## ✔ dplyr     1.2.1     ✔ readr     2.2.0
+    ## ✔ forcats   1.0.1     ✔ stringr   1.6.0
+    ## ✔ ggplot2   4.0.3     ✔ tibble    3.3.1
+    ## ✔ lubridate 1.9.5     ✔ tidyr     1.3.2
+    ## ✔ purrr     1.2.2     
+    ## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+    ## ✖ dplyr::filter() masks stats::filter()
+    ## ✖ dplyr::lag()    masks stats::lag()
+    ## ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
+
+``` r
+file<-"/home/robert-kofler/analysis/2026-tutorial/01-compFewStrains/sose2/toplo/toplot"
+
+mindeletion=10 # minimum length of the internal deletions
+width=8       # plot width 
+height=5      # plot height
+dpi=300       # plot dpi
+
+data <- read_tsv(file,col_names = FALSE,cols(.default = col_character()))
+
+# split of coverage
+cov <- data |> filter(X3== "cov")
+cov <- cov |> rename(seqid=X1,sampleid=X2,feature=X3,pos=X4,covy=X5) 
+cov <- cov |> mutate(pos = as.double(pos),covy= as.double(covy))
+
+# split of ambcoverge
+ambcov <- data |> filter(X3== "ambcov")
+ambcov <- ambcov |> rename(seqid=X1,sampleid=X2,feature=X3,pos=X4,ambcovy=X5) 
+ambcov <- ambcov |> mutate(pos = as.double(pos),ambcovy= as.double(ambcovy))
+
+# split of mcov
+mcov <- data |> filter(X3== "mcov")
+mcov <- mcov |> rename(seqid=X1,sampleid=X2,feature=X3,pos=X4,mcovy=X5) 
+mcov <- mcov |> mutate(pos = as.double(pos),mcovy= as.double(mcovy))
+
+# split of snps
+snp <- data |> filter(X3=="snp")
+snp <- snp |> rename(seqid=X1,sampleid=X2,feature=X3,pos=X4,refc=X5,base=X6,count=X7) 
+snp <- snp |>  mutate(pos = as.double(pos),count= as.double(count))
+
+
+# split of deletion
+deletion <- data |> filter(X3== "del")
+deletion <- deletion |> rename(seqid=X1,sampleid=X2,feature=X3,start=X4,end=X5,startcov=X6,endcov=X7,count=X8) 
+deletion <- deletion |> mutate(start = as.double(start),end= as.double(end),startcov = as.double(startcov),endcov= as.double(endcov),count= as.double(count))
+
+# split of insertion
+insertion <- data |> filter(X3=="ins")
+insertion <- insertion |> rename(seqid=X1,sampleid=X2,feature=X3,pos=X4,length=X5,count=X6) 
+insertion <- insertion |> mutate(pos = as.double(pos), length= as.double(length), count= as.double(count))
+
+# prepare insertions
+# filter min size of insertion
+deletion<- deletion |> filter(end-start>mindeletion)
+# size of scaling
+deletion$scale=log(deletion$count)
+
+theme_set(theme_bw())
+plo<-ggplot()+
+  geom_polygon(data = cov, mapping = aes(x = pos, y = covy), fill = 'grey', color = 'grey') +
+  geom_polygon(data = ambcov, aes(x = pos, y = ambcovy), fill = 'lightgrey', color = 'lightgrey')+
+  geom_polygon(data = mcov, aes(x = pos, y = mcovy), fill = 'lavender', color = 'lavender')+
+  geom_curve(data = deletion, mapping = aes(x = start, y = startcov, xend = end, yend = endcov, linewidth = scale),  curvature = -0.15, ncp=5,show.legend = FALSE)+
+  scale_linewidth(range = c(0.3, 2))+xlab("position") + ylab("coverage")+
+  geom_bar(data=snp,aes(x=pos,y=count,fill=base),stat="identity",width=2)+
+  geom_bar(data=insertion,aes(x=pos,y=count),stat="identity",color="grey50",width=4)
+
+
+# faceting
+nseq<-n_distinct(cov$seqid)
+nsample<-n_distinct(cov$sampleid)
+if (nseq > 1 & nsample>1) {
+  plo<-plo+facet_grid(sampleid~seqid,scales = "free_x", space = "free_x")
+} else if (nseq>1){
+  plo<-plo+facet_grid(~seqid,scales = "free_x", space = "free_x")
+}else if (nsample>1){
+  plo<-plo+facet_grid(sampleid~.)
+}
+
+plot(plo)
+```
+
+    ## Warning: `position_stack()` requires non-overlapping x intervals.
+    ## `position_stack()` requires non-overlapping x intervals.
+    ## `position_stack()` requires non-overlapping x intervals.
+    ## `position_stack()` requires non-overlapping x intervals.
+    ## `position_stack()` requires non-overlapping x intervals.
+    ## `position_stack()` requires non-overlapping x intervals.
+    ## `position_stack()` requires non-overlapping x intervals.
+    ## `position_stack()` requires non-overlapping x intervals.
+
+![](01-compareSamples_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
+This figure nicely demonstrates some invasions during the last century
+
+### estimate the copy numbers of all TEs
+
+one hypothesis is that TE copy numbers decrease over time; so this loss
+compensates for the gain by recent invasions. Lets try if we see this
+with our samples.
 
 **estimate copy number of all TEs**
 
@@ -423,13 +552,91 @@ estimate-so.py --so 1958-Hikone.norm.so --sample-id 1958-Hikone > estimate/1958-
 estimate-so.py --so 1936-Crimea.norm.so --sample-id 1936-Crimea > estimate/1936-Crimea.estimate
 estimate-so.py --so 2004-CO1.norm.so --sample-id 2004-CO1 > estimate/2004-CO1.estimate
 estimate-so.py --so 2004-I38.norm.so --sample-id 2004-I38 > estimate/2004-I38.estimate
+
+# merge and only retain important information (first 4 columns)
+cat estimate/*estimate > estimate/myestimate
+cat myestimate |cut -f1-4 > bareminimum
 ```
 
-## exploring alternatives
+**NOTE** this file will be provided so its easy to redo this analysis
 
-Ideally we would do two things: 1) utilize paired ends and 2) remove
-adaptors. This can (and should) be done with a single step, using
-AdaptorRemoval
+``` r
+# Rscript visualize-plotable.R input.plotable output.png
+library(tidyverse)  
+file<-"/home/robert-kofler/analysis/2026-tutorial/01-compFewStrains/sose2/estimate/bareminimum"
+data <- read_tsv(file,col_names = FALSE,cols(.default = col_character()))
+names(data)<-c("sample","TE","len","copies")
+data$copies<-as.numeric(data$copies)
+
+
+theme_set(theme_bw())
+gp<-ggplot(data, aes(x = sample, y = copies, group = TE))+
+  geom_line()+scale_y_log10()
+plot(gp)
+```
+
+    ## Warning in scale_y_log10(): log-10 transformation introduced infinite values.
+
+![](01-compareSamples_files/figure-gfm/unnamed-chunk-20-1.png)<!-- --> I
+am not sure do we see that the copy numbers of TEs change over time? Are
+they getting less? I do not think so actually. Lets see how the total
+number of TEs changes over time (size of TE times its copy number;
+summed for all TEs)
+
+``` r
+# Rscript visualize-plotable.R input.plotable output.png
+library(tidyverse)  
+file<-"/home/robert-kofler/analysis/2026-tutorial/01-compFewStrains/sose2/estimate/bareminimum"
+data <- read_tsv(file,col_names = FALSE,cols(.default = col_character()))
+names(data)<-c("sample","TE","len","copies")
+data$copies<-as.numeric(data$copies)
+data$len<-as.numeric(data$len)
+
+# next lets see how the total size of the TEs develops over time
+data$genome <- data$copies*data$len
+result <- data %>% group_by(sample) %>% summarise(genome_total = sum(genome))
+gp<-ggplot(result, aes(x = sample, y = genome_total,group=1))+geom_line()
+plot(gp)
+```
+
+![](01-compareSamples_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
+No clear trend; i gues we need more samples. Thats it my friends.
+
+# Finally lets provide the yaml
+
+``` bash
+conda env export -n tutorial --from-history > tutorial-environment.yaml
+
+# which gives this; the file is attached
+name: tutorial
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - bwa=0.7.19
+  - samtools=1.24
+  - aria2
+  - sra-tools
+  - pigz
+  - seqtk
+  - seqkit
+  - minimap2
+  - adapterremoval
+  - pysam
+  - r-tidyverse
+prefix: /home/robert-kofler/miniforge3/envs/tutorial
+```
+
+# Future improvements
+
+This was a very simple analysis just using a single read of a pair; no
+adaptor trimming; no merging of overlapping reads; But it clearly
+revealed a trend. Will a more complex analysis make it more reliable?
+Perhaps but I guess not necessarily so.
+
+In any case a more complex analysis will involve the following: 1)
+utilize paired ends and 2) remove adaptors. This can (and should) be
+done with a single step, eg. using AdaptorRemoval
 
 ``` bash
 conda install -c conda-forge -c bioconda adapterremoval 
@@ -438,5 +645,6 @@ AdapterRemoval --file1 1850-H25_1.fastq --file2 1850-H25_2.fastq --collapse --mi
 # i will just use the collapsed output (the non-collapsed are not manyy)
 mv your_output.collapsed.gz 1850-H25.collapsed.gz 
 #since reads are trimmed we can use the recommended semi-global alignment bwa aln
+# bwa aln recommended for ancient DNA
 bwa aln -l 1024 -n 0.01 -o 2 -t 8 refg/dmel-tes-scg.fasta rawdata/1850-H25.collapsed.gz > map-se/1850-H25.collapsed.sai
 ```
