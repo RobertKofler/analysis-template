@@ -527,10 +527,13 @@ No clear trend; i gues we need more samples.
 Thats it my friends.
 
 # Finally lets provide the yaml
+The yaml specifies all software that were used; Ideally the version should be provided to make it reproducible (tuorial-full.yaml).
 ```{bash eval=FALSE}
+conda env export -n tutorial > tutorial-full.yaml
 conda env export -n tutorial --from-history > tutorial-environment.yaml
+# both files are attached
 
-# which gives this; the file is attached
+# the last one is shorter and looks like this
 name: tutorial
 channels:
   - bioconda
