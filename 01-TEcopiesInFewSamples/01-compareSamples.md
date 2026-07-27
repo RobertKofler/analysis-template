@@ -11,13 +11,31 @@ analysis.
 2.  Translate the RMarkdown into a github_document
 3.  Upload the RMarkdown and the resulting files to github
 
+You only have to edit a single file, i.e. the RMarkdown, the github md
+and the inline figures of R-code are generated when ‘knitting’
+
 **General principles**
 
 - Use conda to manage software installation and make it reproducible.
-- Also upload small files that may be helful for analyis.
-- In any case always upload the data (can be quite processed) that allow
-  to regenerate each figure. Especially figures shown in publications
-  (main and supplement) and master thesis.
+- Make a dedicated github repository for each publication; Subfolders
+  may be used for analysis
+- Subfolders for analysis should have all files necessary for performing
+  the analysis (use hard links to reduce disk space requirements if
+  files are needed in multiple analysis)
+- Also upload small files to github that may be helpful for analysis
+  (e.g. some important fasta sequences)
+- Any figure of a publication needs to be 100% reproducible; Upload the
+  data necessary to generate a figure (does not need to be raw data; can
+  be quite processed), show the RCode used to generate the figure, and
+  produce the figure by knitting the RMarkdown (the resulting figure
+  will be integrated into the code).
+- Always inspect the data eg in IGV; You may include screenshots where
+  helpful (they are easy to integrate in RMarkdonw); Inspect the data as
+  often as possible, and at steps during the analysis. You will get a
+  detailed understanding of what is happening during each step.
+- **keep it simple**; use simple file names and avoid special characters
+  (including space); use simple fasta names (eg 2L,2R), and keep the
+  analysis as simple as possible (but not simpler)
 
 **Scientific question** The scientific question of this mini-tutorial is
 whether we can reproduce the finding that several TEs increased in copy
@@ -27,8 +45,8 @@ numbers in recent years
 
 ## Conda
 
-Make a separate Conda environment for each publication, or even for each
-analysis
+Make a separate Conda environment for each publication, or when
+necessary even for each analysis
 
 ``` bash
 # create environment; if feasible aim to pin software versions
@@ -40,14 +58,30 @@ conda  activate tutorial
 
 # The Data
 
-The tutorial will be done in a new folder that I called ‘2026-tutorial’.
-This analysis will be done in the subfolder 01-compFewStrains (compare a
-few strains). However I would recommend the following name
-‘2026-07-13-compFewStrains’
+This analysis will be done in the subfolder ‘01-compFewStrains’ (compare
+a few strains). Importantly i will perform the analysis in
+‘/home/robert-kofler/analysis/2026-tutorial/01-compFewStrains’ but this
+github RMarkdown will be in
+‘/home/robert-kofler/gh/analysis-template/01-TEcopiesInFewSamples’. Is
+this a good idea, to have the analysis and github separated? Actually I
+do not know! I tried once to have both merged in a single folder but
+this was also a bit chaotic. So nowadays I keep it separate, but I’m not
+sure if this is a good decision. In any case the folder structure of the
+analysis and the github document should be mirrored.
 
-Here I introduce another bioinformatics commandment: **thou should have
-all data necessary for performing an analysis in the deticated
-analysis-folder**
+Another issue, I picked the name ‘01-compFewStrains’. That may not be
+the best name though. For a publication something like the following,
+with a date, may be more suitable ‘2026-07-13-compFewStrains’. Like this
+analysis are sorted by date. In case an analysis needs to be repeated
+(analysis being ‘compFewStrains’) just a folder with a new date
+(‘2026-09-12-compFewStrains’) may be added. Than it is immediatelly
+clear which folder contains the old analysis and which the updated one.
+
+Another important bioinformatics rule is the following: **you should
+have all data necessary for performing an analysis in the deticated
+analysis-folder**. The worst that can happen is file-chaos, where files
+necessary for an analysis are distributed all over a computer. You will
+never be able to reproduce your work (files may change or be deleted..).
 
 ``` bash
 # move into the newly generated folder
@@ -62,7 +96,8 @@ The tutorial needs three data sets:
   genes are really single copy, i.e. occur just once in the reference
   genome
 - a TE library plus single copy genes; this is the basis for any
-  analysis of TE copy number e.g. with DeviaTE, reveal/seqvista
+  analysis of TE copy number e.g. with DeviaTE,
+  reveal/seqvista/te-plotter
 
 ## the short read data
 
@@ -91,7 +126,7 @@ Download using separate sra environment
 
 ``` bash
 # for me it was necessary to generate a dedicated sra environment
-# otherwise i ended up with an outdated sra-tools version
+# otherwise i ended up with an outdated sra-tools version (my conda channel priority list may have been suboptimal)
 conda create -n sra -c conda-forge -c bioconda "sra-tools>=3.1"
 conda activate sra
 
@@ -101,9 +136,10 @@ prefetch SRR23876569 SRR23876565 SRR11846555 SRR11846565 SRR1663560 SRR189041
 fasterq-dump SRR23876569 SRR23876565 SRR11846555 SRR11846565 SRR1663560 SRR189041
 ```
 
-Rename the files to get a bit more intuitive names using ln. ln
-generates hard-links - **it is important to generate hard links** as the
-original file name will not be changed nor will the data be duplicated.
+Rename the files to get a bit more intuitive names using ‘ln’. Note that
+‘ln’ generates hard-links - **and it is important to generate hard
+links** as the original file name will not be changed nor will the data
+be duplicated.
 
 ``` bash
 ln SRR23876569_1.fastq 1850-H25_1.fastq
@@ -178,7 +214,10 @@ cat GCA_048772135.1_ASM4877213v1_genomic.fna |grep '>'
 # these names will generate a ton of problems in downstream analysis
 ```
 
-Change the names of the fasta entries
+Change the names of the fasta entries; This illustrates another
+principle, **use simple files, simple file names and simple fasta IDs
+(and simple analysis)** Avoid special characters, which is anything
+other than \[A-Za-z0-9\_-\]
 
 ``` bash
 # reformat the fasta names
@@ -208,11 +247,12 @@ upper-case sequences. Admittedly I may be paranoid, but there is
 certainly software that has problems when some sequences are lowercase
 and others are uppercase. However, this softmasking (repeats are
 lowercase) seems to be important for AUGUSTUS and BRAKER, and perhaps
-speeds up blastn
+speeds up blastn. But again, lets **keep it simple** and thus just
+upper-chase characters; Annotation such as repeat annotation should be
+provided by different means (like bed-files, or gtf-files)
 
 ``` bash
-
-# use seqtk
+# use seqtk for conversion
 conda install -c conda-forge -c bioconda seqtk seqkit
 seqtk seq -U -l 80 Dmel-canton-t2t.raw.fasta > ../Dmel-canton.fasta
 
@@ -228,8 +268,8 @@ sequences and single copy genes.
 ### single copy genes
 
 We start with the single copy genes; thee scg are uploaded with this
-tutorial; this illustrates one important principle: upload small data
-files that may be helpful for the analysis.
+tutorial; This illustrates one important principle: **upload small data
+files that may be helpful for the analysis**.
 
 ``` bash
 # first put the scg into a separte folder
@@ -242,6 +282,8 @@ seqkit fx2tab -nlg scg_rhi_tj_rpl32.fa
 # Dmel_rhi  9026    41.18
 # Dmel_rpl32    4933    50.86
 # Dmel_tj   7492    45.65
+
+# conclusion: everything fine, three SCG with a length between 4900 and 9000bp; average GC content 
 ```
 
 Next lets make sure these are actually single copy genes. Lets map them
@@ -250,6 +292,7 @@ to the T2T assembly
 ``` bash
 # align with minimap2
 conda install -c conda-forge -c bioconda minimap2 
+
 # parameters asm5 specify alignment in same species; or close strain
 minimap2 -x asm5 ../refg-wg/Dmel-canton.fasta scg_rhi_tj_rpl32.fa > scg_rhi_tj_rpl32.paf 
 cat scg_rhi_tj_rpl32.paf
@@ -262,7 +305,9 @@ cat scg_rhi_tj_rpl32.paf
 
 ### TE sequences
 
-lets download the TE sequences of Dmel and inspect them.
+lets download the TE sequences of Dmel and inspect them. They are also
+provided with the tutorial; again demonstrating the principle to upload
+small files.
 
 ``` bash
 seqkit fx2tab -nlg dmel-tes.fasta
@@ -307,10 +352,12 @@ bwa index dmel-tes-scg.fasta
 Lets start with the simples strategy: we only use one read of the
 paired-end and map the short read data to the TE-reference with bwa mem,
 which performs a local alignment so that adaptors should be removed
-during alignments. **ALWAYS start with the simple approach first**
-Gradually add complexity where needed
+during alignments.
 
-single end mappging
+**ALWAYS start with the simple approach first** gradually add complexity
+as needed
+
+Single end mappging
 
 ``` bash
 mkdir map-se
@@ -337,51 +384,57 @@ for i in *.bam; do samtools index $i; done
 
 ## intuitive epxloration
 
-So lets inspect the data in IGV; use the refg as reference \### scg The
-single copy gene should have a uniform coverage in all samples; As an
-example lets use tj (traffic jam); this is indeed the case
+Let’s first inspect the data intuitively in IGV; Use the refg as
+reference; Another key principle: **always inspect your data eg in
+IGV**. Ideally inspect them at all intermediate stages of your analysis,
+so you understand in detail what is exactly happening at each step. \###
+scg The single copy gene should have a uniform coverage in all samples;
+As an example lets use tj (traffic jam); This is a sanity check, if the
+single copy gene is weird than something went wrong.
 
 **tj**
 
-![tj](01-compareSamples_files/tj.png) \### no invaders lets move to TEs
-that did not invade. Diver and roo
+![tj](01-compareSamples_files/tj.png) Conclusion: everything is fine,
+the SCG tj is present in all samples and has a uniform coverage and few
+SNPs
 
+### long-term TE
+
+Next lets inspect a TE that did NOT invade recently. We do not know when
+this TE invaded, but it may have been quite long ago. We use ‘Diver’
 **Diver**
 
-![Diver](01-compareSamples_files/diver.png) **roo**
-
-<figure>
-<img src="01-compareSamples_files/roo.png" alt="roo" />
-<figcaption aria-hidden="true">roo</figcaption>
-</figure>
+![Diver](01-compareSamples_files/diver.png) Conclusion: great Diver is
+present in all samples and has a quite uniform coverage
 
 ### early invaders in 19th century
 
-lets move to TEs that invaded in the 19th century; Opus and 412
+Lets move to a TEs that invaded in the 19th century ‘Opus’
 
-**412** ![412](01-compareSamples_files/412.png) **Opus**
-![opus](01-compareSamples_files/Opus.png)
+**Opus** ![412](01-compareSamples_files/Opus.png) Conclusion: perfect,
+it does seem absent in the earlies stample (1850) but present in later
+samples
 
-### late invaders in 20th century
+### Late invaders in 20th century
 
-lets move to TEs that invaded in the 19th century; P-element and Spoink
+Fianlly lets move to TEs that invaded in the 20th century: Spoink
 
-**P-element** ![P-element](01-compareSamples_files/Pelement.png)
 **Spoink**
 
-<figure>
-<img src="01-compareSamples_files/Spoink.png" alt="Spoink" />
-<figcaption aria-hidden="true">Spoink</figcaption>
-</figure>
+![Spoink](01-compareSamples_files/Spoink.png) Perfect Spoink is absent
+in early samples, but present later on.
 
 ### Conclusion
 
-Already our xxplorative analysis in IGV confirms the recent invasions.
-The scg tj, Diver and roo show no differnce in the samples, Opus and 412
-invaded in the 19th century and P-element and Spoink in the 20th
-century. However this was a very crude analysis. Most importantly we did
-not normalize the read numbers yet, we need to normalize to the coverage
-of single copy genes. We use TEplotter (deviate-derivate)
+Already our explorative analysis in IGV confirms the recent invasions.
+The scg tj and Diver show no difference among the samples, Opus invaded
+in the 19th century and Spoink in the 20th century. It is a good sign of
+tustworthyness if a pattern is already supported by visual inspect at
+such an early and crude stage of an analysis. The most important
+shortcoming of this analysis is that library-depth (differences in read
+numbers) was not yet considered. So we urgently need to normalize the
+data. In DeviaTE/te-plotter we normalize the coverage of TEs to the
+coverae of single copy genes. We use TEplotter (deviate-derivate)
 
 ## Normalizing to coverage with scg - teplotter
 
@@ -431,11 +484,13 @@ cat toplo/*plotable > toplo/toplot
 ```
 
 **lets plot** Ideally one should upload the toplot file, as it is the
-input for the grafik; unfortunatelly its \>2Mb thats why I do not do it.
-But this nicely illustrates how important it is to upload the input
-files, because this figure is now irreproducible; at least it requires a
-major effort and redo all analsysis. Note that RMarkdown integrates the
-figure automatically into the md (i did not have to do anything)
+input for the resulting grafic. Unfortunatelly its \>2Mb thats why I did
+not do it here. But this actually serves to illustrate how important it
+is to upload the input files, because this figure is **IRREPRODUCIBLE**
+(at least without major effort where we need to redo all preceeding
+analsysis).
+
+Note that RMarkdown integrates the figure automatically into the md.
 
 ``` r
 # Rscript visualize-plotable.R input.plotable output.png
@@ -535,13 +590,17 @@ plot(plo)
     ## `position_stack()` requires non-overlapping x intervals.
 
 ![](01-compareSamples_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
-This figure nicely demonstrates some invasions during the last century
+This figure nicely demonstrates some invasions (McLE, P-element, Opus)
+during the last century
 
 ### estimate the copy numbers of all TEs
 
-one hypothesis is that TE copy numbers decrease over time; so this loss
-compensates for the gain by recent invasions. Lets try if we see this
-with our samples.
+The invasions add a lot of sequence to the genome of Dmel. So the Dmel
+genome should keep growing. One hypothesis that may prevent such a
+growth is that TEs also get lost at a high rate, such that TE copy
+numbers decrease over time; This loss would compensates for the TE gain
+by recent invasions. Lets inspect if we see this pattern in our six
+samples.
 
 **estimate copy number of all TEs**
 
@@ -558,7 +617,9 @@ cat estimate/*estimate > estimate/myestimate
 cat myestimate |cut -f1-4 > bareminimum
 ```
 
-**NOTE** this file will be provided so its easy to redo this analysis
+**NOTE** this file ‘bareminium’ is uploade so its super-easy to redo
+this analysis, and regenerate the figure (**principle: upload the data
+that allow regenerating the figure**)
 
 ``` r
 # Rscript visualize-plotable.R input.plotable output.png
@@ -568,20 +629,34 @@ data <- read_tsv(file,col_names = FALSE,cols(.default = col_character()))
 names(data)<-c("sample","TE","len","copies")
 data$copies<-as.numeric(data$copies)
 
+data <- data %>%
+  mutate(category = case_when(
+    str_starts(TE, "Dmel_")                        ~ "SCG",
+    TE %in% c("P-element", "Spoink", "McLE", "Kuruka","Transib1","412","Opus","blood","hobo","Tirant","I-element","Souslik") ~ "RI",
+    TRUE                                           ~ "LI"
+  ))
+
+
 
 theme_set(theme_bw())
-gp<-ggplot(data, aes(x = sample, y = copies, group = TE))+
-  geom_line()+scale_y_log10()
+gp<-ggplot(data, aes(x = sample, y = copies, group = TE,color=category))+
+  geom_line()+scale_y_log10()+
+  scale_colour_manual(values = c(SCG = "grey60", RI = "firebrick", LI = "steelblue"))
+
 plot(gp)
 ```
 
     ## Warning in scale_y_log10(): log-10 transformation introduced infinite values.
 
 ![](01-compareSamples_files/figure-gfm/unnamed-chunk-20-1.png)<!-- --> I
-am not sure do we see that the copy numbers of TEs change over time? Are
-they getting less? I do not think so actually. Lets see how the total
-number of TEs changes over time (size of TE times its copy number;
-summed for all TEs)
+am not sure do we see that the copy numbers of TEs change over time? The
+SCG stay at the same level (a single copy) which is great. The recent
+invaders (RI) are increasing in copy number, an the LI (late invaders)
+seem rather stable. So with these few samples no clear trend is
+observable.
+
+Lets see how the total number of TEs changes over time (size of TE times
+its copy number; summed for all TEs)
 
 ``` r
 # Rscript visualize-plotable.R input.plotable output.png
@@ -600,12 +675,14 @@ plot(gp)
 ```
 
 ![](01-compareSamples_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
-No clear trend; i gues we need more samples. Thats it my friends.
+No clear trend is observable; But the number of samples is low I guess
+we need more samples. That’s it with the first tutorial.
 
 # Finally lets provide the yaml
 
 The yaml specifies all software that were used; Ideally the version
-should be provided to make it reproducible (tuorial-full.yaml).
+should be provided to make the analysis reproducible
+(tutorial-full.yaml).
 
 ``` bash
 conda env export -n tutorial > tutorial-full.yaml
@@ -635,9 +712,9 @@ prefix: /home/robert-kofler/miniforge3/envs/tutorial
 # Future improvements
 
 This was a very simple analysis just using a single read of a pair; no
-adaptor trimming; no merging of overlapping reads; But it clearly
-revealed a trend. Will a more complex analysis make it more reliable?
-Perhaps but I guess not necessarily so.
+adaptor trimming was performed; no merging of overlapping reads; But it
+clearly revealed a trend. Will a more complex analysis make it more
+reliable? Perhaps, but I guess not necessarily so.
 
 In any case a more complex analysis will involve the following: 1)
 utilize paired ends and 2) remove adaptors. This can (and should) be
