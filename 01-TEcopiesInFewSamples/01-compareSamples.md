@@ -7,7 +7,8 @@
 This is a guide showing students on how to best perform bioinformatics
 analysis.
 
-1.  Document analysis carefully in RMarkdown (as shown here).
+1.  Document analysis carefully in RMarkdown (as shown here; or
+    equivalent like Jupyter Notebook).
 2.  Translate the RMarkdown into a github_document
 3.  Upload the RMarkdown and the resulting files to github
 
@@ -387,9 +388,12 @@ for i in *.bam; do samtools index $i; done
 Let’s first inspect the data intuitively in IGV; Use the refg as
 reference; Another key principle: **always inspect your data eg in
 IGV**. Ideally inspect them at all intermediate stages of your analysis,
-so you understand in detail what is exactly happening at each step. \###
-scg The single copy gene should have a uniform coverage in all samples;
-As an example lets use tj (traffic jam); This is a sanity check, if the
+so you understand in detail what is exactly happening at each step.
+
+### scg
+
+The single copy gene should have a uniform coverage in all samples; As
+an example lets use tj (traffic jam); This is a sanity check, if the
 single copy gene is weird than something went wrong.
 
 **tj**

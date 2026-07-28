@@ -1,0 +1,68 @@
+01-simplesnakemake
+================
+2026-07-13
+
+# Intro
+
+In the previous section we showed how to perform and document a simple
+bioinformatics pipeline. However this previous section had one major
+weakness: we manually performed all analysis steps for each of the
+files. This is a waste of time and source of error. So it may be a good
+idea to turn this into a Snakemake pipeline.
+
+# the data
+
+The analysis will be performed in a novel folder
+‘/home/robert-kofler/analysis/2026-tutorial/02-snakemake’. We will use
+the same files than from the previous analysis
+‘/home/robert-kofler/analysis/2026-tutorial/01-compFewStrains’ A major
+principle introduced previously is to have all files necessary for an
+analysis bundled in the folder where the analysis will be performed. To
+avoid duplicating data we will use hard links
+
+``` bash
+mkdir refg
+mkdir refg-wg
+mkdir rawreads
+for i in ../../01-compFewStrains/rawdata/*.fastq; do ln $i . ; done # rawreads
+for i in ../../01-compFewStrains/refg/*fasta*; do ln $i . ; done    # refg
+for i in ../../01-compFewStrains/refg-wg/*fasta*; do ln $i . ; done # refg-wg 
+```
+
+# analysis
+
+We follow the major principle: start as simple as possible and gradually
+add complexit
+
+## mapping sinlge file with snakemake
+
+``` bash
+# install snakemake; it needs an older Python version... (and i updated the sra-tools as well)
+conda activate tutorial # see previous tutorial 01
+conda install python=3.12 snakemake sra-tools
+# this installed: snakemake                                9.23.1           hdfd78af_2            bioconda
+```
+
+run mapping lets make the following snakemake file
+
+``` python
+# create the file
+micro Snakefile
+
+# here comes the file
+rule bwa_map:
+    input:
+        ref = "../refg/dmel-tes-scg.fasta",
+        fq = "../rawdata/2004-I38_1.fastq" 
+    output:
+        "2004-I38.sort.bam"
+    shell:
+        "bwa mem {input.ref} {input.fq} | samtools sort -@ 4 -o {output} -"
+# end file
+
+# run it 
+snakemake --cores 8
+```
+
+We will use the same data from the previous section. We will hard-link
+them to

@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # Intro
 This is a guide showing students on how to best perform bioinformatics analysis.
 
-1. Document analysis carefully in RMarkdown (as shown here). 
+1. Document analysis carefully in RMarkdown (as shown here; or equivalent like Jupyter Notebook). 
 2. Translate the RMarkdown into a github_document
 3. Upload the RMarkdown and the resulting files to github
 
@@ -221,9 +221,11 @@ bwa index Dmel-canton.fasta
 
 
 ## the reference for estimating TE copy numbers
+
 For estimating TE copy numbers we need a reference consisting of TE sequences and single copy genes. 
 
 ### single copy genes
+
 We start with the single copy genes; thee scg are uploaded with this tutorial; This illustrates one important principle: **upload small data files that may be helpful for the analysis**.
 
 ```{bash eval=FALSE}
@@ -325,9 +327,12 @@ zsh map.sh
 for i in *.bam; do samtools index $i; done
 ```
 
-## intuitive epxloration
+## intuitive exploration
+
 Let's first inspect the data intuitively in IGV; Use the refg as reference; Another key principle: **always inspect your data eg in IGV**. Ideally inspect them at all intermediate stages of your analysis, so you understand in detail what is exactly happening at each step.
-### scg
+
+### single copy genes
+
 The single copy gene should have a uniform coverage in all samples; As an example lets use tj (traffic jam); This is a sanity check, if the single copy gene is weird than something went wrong.
 
 **tj**
