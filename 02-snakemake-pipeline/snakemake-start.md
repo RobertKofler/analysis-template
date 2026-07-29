@@ -29,12 +29,7 @@ for i in ../../01-compFewStrains/refg/*fasta*; do ln $i . ; done    # refg
 for i in ../../01-compFewStrains/refg-wg/*fasta*; do ln $i . ; done # refg-wg 
 ```
 
-# analysis
-
-We follow the major principle: start as simple as possible and gradually
-add complexit
-
-## mapping sinlge file with snakemake
+Lets install snakemake
 
 ``` bash
 # install snakemake; it needs an older Python version... (and i updated the sra-tools as well)
@@ -43,13 +38,25 @@ conda install python=3.12 snakemake sra-tools
 # this installed: snakemake                                9.23.1           hdfd78af_2            bioconda
 ```
 
-run mapping lets make the following snakemake file
+# analysis
+
+We follow the major principle: start as simple as possible and gradually
+add complexity
+
+## mapping single file with snakemake
+
+First lets map just a single file, that is explicitely mentioned in the
+Snakefile
 
 ``` python
 # create the file
 micro Snakefile
+```
 
-# here comes the file
+the content of the Snakefile
+
+``` python
+# Snakefiles are Python, so intendation matters
 rule bwa_map:
     input:
         ref = "../refg/dmel-tes-scg.fasta",
@@ -58,9 +65,87 @@ rule bwa_map:
         "2004-I38.sort.bam"
     shell:
         "bwa mem {input.ref} {input.fq} | samtools sort -@ 4 -o {output} -"
-# end file
+# input means: these files must exist before I, the rule, can proceed
+# output means: I will generate these files
+```
 
-# run it 
+lets run it
+
+``` python
+snakemake --cores 8
+```
+
+## mapping some files
+
+lets map some files that we specify manually in the command line; so
+this is already much more versatile than the previous version
+
+``` python
+mkdir map-some
+micro Snakefile
+```
+
+Here is the snakemake file
+
+``` python
+rule bwa_map:
+    input:
+        ref = "../refg/dmel-tes-scg.fasta",
+        fq = "../rawdata/{sample}_1.fastq" 
+    output:
+        "{sample}.sort.bam"
+    shell:
+        "bwa mem {input.ref} {input.fq} | samtools sort -@ 4 -o {output} -"
+```
+
+Now run with the following command. Note how Snakemake **pulls** the
+requested files
+
+``` python
+snakemake --cores 8 2004-I38.sort.bam 2004-CO1.sort.bam
+```
+
+## mapping all files
+
+To map all files in a folder we need an additional rule; Note rule all
+is just some random name, what matters is the order of the rules.
+Snakemake always targets the very first rule
+
+``` python
+# find all samples in the folder rawdata; I only use the first read per this rule
+SAMPLES = glob_wildcards("../rawdata/{sample}_1.fastq").sample
+
+# request an output file for each sample
+rule all:
+    input:
+        expand("{sample}.sort.bam", sample=SAMPLES)
+# note that input means these files must exist before I can proceed;
+# this rule all does not generate anything; hence not output
+# this is a consumer rule stating: I want these files -> generate them
+# so bascially rule all: should list all files that we want in the end
+
+# rule bwa_map is a producer rule; it generates something
+rule bwa_map:
+    input:
+        ref = "../refg/dmel-tes-scg.fasta",
+        fq = "../rawdata/{sample}_1.fastq" 
+    output:
+        "{sample}.sort.bam"
+    shell:
+        "bwa mem {input.ref} {input.fq} | samtools sort -@ 4 -o {output} -"
+```
+
+Now this mapping would actually take a lot of time. So lets make a dry
+run first and see if everything works (-n), also lets display all
+commands (-p).
+
+``` python
+snakemake -n -p
+```
+
+if this works without problems lets un
+
+``` python
 snakemake --cores 8
 ```
 
