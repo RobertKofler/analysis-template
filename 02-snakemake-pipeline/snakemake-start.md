@@ -5,20 +5,24 @@
 # Intro
 
 In the previous section we showed how to perform and document a simple
-bioinformatics pipeline. However this previous section had one major
+bioinformatics pipeline. However, this previous section had one major
 weakness: we manually performed all analysis steps for each of the
 files. This is a waste of time and source of error. So it may be a good
-idea to turn this into a Snakemake pipeline.
+idea to turn this into a Snakemake pipeline. In this section we show how
+to generate SnakeMake pipelines. It’s more of a tutorial, starting very
+simple and gradually adding complexity. Nevertheless it also
+re-emphasizes some of the bioinformatics principles introduced before
+(in section 01).
 
 # the data
 
 The analysis will be performed in a novel folder
 ‘/home/robert-kofler/analysis/2026-tutorial/02-snakemake’. We will use
-the same files than from the previous analysis
+the same files than used in the previous analysis
 ‘/home/robert-kofler/analysis/2026-tutorial/01-compFewStrains’ A major
-principle introduced previously is to have all files necessary for an
-analysis bundled in the folder where the analysis will be performed. To
-avoid duplicating data we will use hard links
+bioinformatics principle introduced previously is to have all files
+necessary for an analysis bundled in the folder where the analysis will
+be performed. To avoid duplicating data we will use hard links:
 
 ``` bash
 mkdir refg
@@ -75,7 +79,7 @@ lets run it
 snakemake --cores 8
 ```
 
-## mapping some files
+## mapping some specified files
 
 lets map some files that we specify manually in the command line; so
 this is already much more versatile than the previous version
@@ -105,7 +109,7 @@ requested files
 snakemake --cores 8 2004-I38.sort.bam 2004-CO1.sort.bam
 ```
 
-## mapping all files
+## mapping all files in folder
 
 To map all files in a folder we need an additional rule; Note rule all
 is just some random name, what matters is the order of the rules.
@@ -149,5 +153,75 @@ if this works without problems lets un
 snakemake --cores 8
 ```
 
-We will use the same data from the previous section. We will hard-link
-them to
+## mapping all files in folder - building block
+
+We will improve the snakemake pipeline for mapping all fastq files in a
+folder by adding two important parts. First, we make the pipeline more
+configurable with a yaml file. Second, we index the refernce
+automatically when it is not yet indexed. Also we add some sanity
+checks, like the assertion that files exist; and if they exist print
+them
+
+We will upload the pipeline to github in the folder bb-map. So it can
+serve as a building block for quickly mapping several fastq files to a
+reference genome.
+
+When using it first configure in config.yaml than run snakemake
+
+**Config.yaml**
+
+``` yaml
+ref: /home/robert-kofler/analysis/2026-tutorial/02-snakemake/refg/dmel-tes-scg.fasta
+readdir: /home/robert-kofler/analysis/2026-tutorial/02-snakemake/rawdata
+outdir: /home/robert-kofler/analysis/2026-tutorial/02-snakemake/bb-map
+```
+
+**Snakefile**
+
+``` python
+configfile: "config.yaml"
+
+# define some frequently used variable
+REF     = config["ref"]
+READDIR = config["readdir"]
+OUTDIR  = config["outdir"]
+BWAIDX = multiext(REF, ".amb", ".ann", ".bwt", ".pac", ".sa")
+
+# find all samples in the folder 
+SAMPLES = glob_wildcards(READDIR+ "/{sample}.fastq").sample
+
+# check if samples exist and print them
+assert SAMPLES, f"no *.fastq found in {READDIR}"
+print("samples:")
+[print(i) for i in SAMPLES]
+print()
+print("reference: "+ REF)
+print("input directory: "+ READDIR)
+print("output directory: "+ OUTDIR)
+
+# request an output file for each sample in the folder
+rule all:
+    input:
+        expand(OUTDIR+"/{sample}.sort.bam", sample=SAMPLES)
+
+
+# how to index the reference
+rule bwa_index:
+    input:
+        REF
+    output:
+        BWAIDX
+    shell:
+        "bwa index {input}"
+
+
+rule bwa_map:
+    input:
+        ref = REF,
+        fq = READDIR+"/{sample}.fastq",
+        idx = BWAIDX
+    output:
+        OUTDIR+"/{sample}.sort.bam"
+    shell:
+        "bwa mem {input.ref} {input.fq} | samtools sort -@ 4 -o {output} -"
+```

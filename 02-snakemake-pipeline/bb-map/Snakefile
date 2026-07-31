@@ -1,0 +1,45 @@
+configfile: "config.yaml"
+
+# define some frequently used variable
+REF     = config["ref"]
+READDIR = config["readdir"]
+OUTDIR  = config["outdir"]
+BWAIDX = multiext(REF, ".amb", ".ann", ".bwt", ".pac", ".sa")
+
+# find all samples in the folder 
+SAMPLES = glob_wildcards(READDIR+ "/{sample}.fastq").sample
+
+# check if samples exist and print them
+assert SAMPLES, f"no *.fastq found in {READDIR}"
+print("samples:")
+[print(i) for i in SAMPLES]
+print()
+print("reference: "+ REF)
+print("input directory: "+ READDIR)
+print("output directory: "+ OUTDIR)
+
+# request an output file for each sample in the folder
+rule all:
+	input:
+		expand(OUTDIR+"/{sample}.sort.bam", sample=SAMPLES)
+
+
+# how to index the reference
+rule bwa_index:
+    input:
+    	REF
+    output:
+        BWAIDX
+    shell:
+        "bwa index {input}"
+
+
+rule bwa_map:
+	input:
+		ref = REF,
+		fq = READDIR+"/{sample}.fastq",
+		idx=BWAIDX
+	output:
+		OUTDIR+"/{sample}.sort.bam"
+	shell:
+		"bwa mem {input.ref} {input.fq} | samtools sort -@ 4 -o {output} -"
